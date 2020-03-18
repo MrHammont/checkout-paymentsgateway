@@ -1,0 +1,73 @@
+version: '3.4'
+
+services:
+  checkout.paymentsgateway.api:
+    image: ${DOCKER_REGISTRY-}checkoutpaymentsgatewayapi
+    build:
+      context: .
+      target: final
+      dockerfile: src/Checkout.PaymentsGateway.Api/Dockerfile
+    ports:
+      - 5000:80
+      - 5001:443
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Release
+    restart: always
+
+  checkout.paymentsgateway.db:
+    image: "mcr.microsoft.com/mssql/server"
+    ports:  
+      - 5010:1433
+    restart: unless-stopped
+    environment:
+      SA_PASSWORD: "MyPassword123!"
+      ACCEPT_EULA: "Y"
+
+  checkout.paymentsgateway.redis:
+    image: redis
+    container_name: redis
+    restart: unless-stopped
+    ports:
+      - 6379:6379
+    volumes: 
+      - redis:/data
+
+  checkout.bank.api:
+    image: ${DOCKER_REGISTRY-}checkoutpaymentsgatewaybankintegrationapi
+    build:
+      context: .
+      target: final
+      dockerfile: src/Checkout.PaymentsGateway.BankIntegration.Api/Dockerfile
+    ports:
+      - 7000:80
+      - 7001:443
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Release
+    restart: always
+
+  checkout.identity.api:
+    image: ${DOCKER_REGISTRY-}checkoutidentityapi
+    build:
+      context: .
+      target: final
+      dockerfile: src/Checkout.Identity.Api/Dockerfile
+    ports:
+      - 8000:80
+      - 8001:443
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Release
+    restart: always
+
+  checkout.identity.db:
+    image: "mcr.microsoft.com/mssql/server"
+    ports:  
+      - 8005:1433
+    environment:
+      SA_PASSWORD: "MyPassword123!"
+      ACCEPT_EULA: "Y"
+    restart: unless-stopped
+
+
+volumes:
+  redis:
+    driver: local
